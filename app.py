@@ -1,20 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for
+import config as cf
+from model import Item, ViewModel
+from trello_app import trello_bp
 import session_items as session
+import requests
+import json
 
-app = Flask(__name__)
-app.config.from_object('flask_config.Config')
 
-@app.route('/')
-def index():
-    items = session.get_items()
-    return render_template('index.html', items=items)
-    #return 'Hello World!'
-
-@app.route('/add', methods=['POST'])
-def addToDo():
-    title = request.form['title']
-    session.add_item(title)
-    return redirect(url_for('index'))
-
-if __name__ == '__main__':
-    app.run()
+def create_app():
+    app = Flask(__name__)
+    app.config.from_pyfile('config.py')
+    #app.config.from_object('app_config.Config')
+    
+    app.register_blueprint(trello_bp)
+        
+    return app

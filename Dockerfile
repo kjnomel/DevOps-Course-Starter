@@ -19,7 +19,7 @@ RUN touch /devops-course-starter/src/app/__init__.py
 RUN pip install -U pip
 RUN poetry install --no-dev
 
-COPY app.py config.py flask_config.py model.py trello_app.py /devops-course-starter/src/app/
+COPY app.py config.py flask_config.py model.py trello_app.py .env.template /devops-course-starter/src/app/
 
 # Expose instruction
 EXPOSE 5000
@@ -34,3 +34,22 @@ CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--chdir", "src/app", "app:app"]
 FROM base as development
 ENV FLASK_ENV development
 ENTRYPOINT FLASK_APP=/devops-course-starter/src/app/app.py flask run --host=0.0.0.0
+
+
+# testing stage
+FROM base as test
+
+# Install Chrome
+RUN curl -sSL https://dl.google.com/linux/direct/google-chromestable_current_amd64.deb -o chrome.deb &&\
+  apt-get install ./chrome.deb -y &&\
+  rm ./chrome.deb
+
+# Install Chromium WebDriver
+RUN LATEST=`curl -sSL https://chromedriver.storage.googleapis.com/LATEST_RELEASE` &&\
+  echo "Installing chromium webdriver version ${LATEST}" &&\
+  curl -sSL https://chromedriver.storage.googleapis.com/${LATEST}/chromedriver_linux64.zip -o chromedriver_linux64.zip &&\
+  apt-get install unzip -y &&\
+  unzip ./chromedriver_linux64.zip
+
+COPY test_integration_trello.py test_ViewModel.py .env.test ./tests_e2e /devops-course-starter/src/app/
+ENTRYPOINT ["poetry", "run", "pytest"]

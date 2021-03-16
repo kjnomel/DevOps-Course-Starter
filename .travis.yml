@@ -1,2 +1,27 @@
+sudo: required
+
+language: python
+python:
+  - 3.8
+
+services:
+  - docker
+
+install:
+  #- docker build --target development --tag todo-app:dev .
+  - docker build --target test --tag todo-app:test .
+  #- docker run --env-file ./.env.template -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name app todo-app:dev
+  - docker run --env-file ./.env.test -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name int-test-app todo-app:test
+
+before_script:
+  - poetry install
+
 script:
-- echo "hello world"
+#- docker ps | grep -q app
+- docker ps | grep -q int-test-app
+- poetry run pytest
+- poetry run pytest test_integration_trello.py
+- poetry run pytest ./test_e2e
+
+after_script:
+- docker rm -f int-test-app

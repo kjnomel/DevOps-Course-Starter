@@ -8,10 +8,14 @@ services:
   - docker
 
 install:
-  #- docker build --target development --tag todo-app:dev .
-  - docker build --target test --tag todo-app:test .
-  #- docker run --env-file ./.env.template -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name app todo-app:dev
-  - docker run --env-file ./.env.test -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name int-test-app todo-app:test
+  #- docker build --target development --tag $USERNAME/todo-app:$TRAVIS_COMMIT .
+  #- docker build --target production --tag $USERNAME/todo-app:latest .
+  - docker build --target test --tag $USERNAME/todo-app:$TRAVIS_COMMIT .
+  #- docker images
+  
+  #- docker run --env-file ./.env.template -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name app todo-app:$TRAVIS_COMMIT
+  #- docker run --env-file ./.env.template -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name app todo-app:latest
+  - docker run --env-file ./.env.test -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name int-test-app todo-app:$TRAVIS_COMMIT
 
 before_script:
   - poetry install
@@ -23,5 +27,5 @@ script:
 - poetry run pytest test_integration_trello.py
 - poetry run pytest ./test_e2e
 
-after_script:
-- docker rm -f int-test-app
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin; docker push $USERNAME/todo-app:latest; fi

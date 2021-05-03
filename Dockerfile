@@ -28,7 +28,8 @@ EXPOSE 5000
 FROM  base as production
 # Dockerfile Entrypoint
 #CMD [exec gunicorn --bind 0.0.0.0:5000 --forwarded-allow-ips='*' app:app]
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--chdir", "src/app", "app:app"]
+#CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--chdir", "src/app", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "--chdir", "src/app", "app:app"]
 
 
 FROM base as development

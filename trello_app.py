@@ -2,6 +2,7 @@ from flask import Blueprint
 from flask import current_app as app
 from flask import Flask, render_template, request, redirect, url_for
 import config as cf
+import trello_mongo_db as mgdb
 from model import Item, ViewModel
 
 import session_items as session
@@ -13,28 +14,34 @@ trello_bp = Blueprint( 'trello_bp', __name__)
 @trello_bp.route('/', methods=['GET'])
 #@app.route('/')
 def index():
-    board_id = cf.get_trello_board_id()
-    url = f"https://api.trello.com/1/boards/{board_id}/cards"
-    query = cf.get_trello_query()
+    #board_id = cf.get_trello_board_id()
+    #url = f"https://api.trello.com/1/boards/{board_id}/cards"
+    #query = cf.get_trello_query()
     
-    response = requests.request(
-        "GET",
-        url,
-        params=query
-        )
-    
-    cards = json.loads(response.text)
+    #response = requests.request(
+    #    "GET",
+    #    url,
+    #    params=query
+    #    )
+    #cards = json.loads(response.text)
+
+    #get mongo collection
+    trello_col = mgdb.get_trello_collection()
+    #query all records from db
+    cards = list(trello_col.find())
+
+
     items_list = list()
     for card in cards:
-        status = 'To Do' 
-        if card['idList'] == cf.get_trello_list_id():
-            status = 'To Do'
-        elif card['idList'] == cf.get_trello_list_id_doing():
-            status = 'Doing'
-        else:
-            status = 'Done'
+        #status = 'To Do' 
+        #if card['idList'] == cf.get_trello_list_id():
+        #    status = 'To Do'
+        #elif card['idList'] == cf.get_trello_list_id_doing():
+        #    status = 'Doing'
+        #else:
+        #    status = 'Done'
 
-        item = Item(card['id'], status, card['name'], card['dateLastActivity'])
+        item = Item(card['id'], card['status'], card['name'], card['dateLastActivity'])
         items_list.append(item)
 
     item_view_model = ViewModel(items_list)

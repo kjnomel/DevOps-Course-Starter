@@ -8,46 +8,22 @@ from model import Item, ViewModel
 import session_items as session
 import requests
 import json
+import uuid
+import datetime
 
 trello_bp = Blueprint( 'trello_bp', __name__)
 
 @trello_bp.route('/', methods=['GET'])
 #@app.route('/')
 def index():
-    #board_id = cf.get_trello_board_id()
-    #url = f"https://api.trello.com/1/boards/{board_id}/cards"
-    #query = cf.get_trello_query()
-    
-    #response = requests.request(
-    #    "GET",
-    #    url,
-    #    params=query
-    #    )
-    #cards = json.loads(response.text)
-
-    #get mongo collection
     trello_col = mgdb.get_trello_collection()
-    #query all records from db
     cards = list(trello_col.find())
-
-
     items_list = list()
     for card in cards:
-        #status = 'To Do' 
-        #if card['idList'] == cf.get_trello_list_id():
-        #    status = 'To Do'
-        #elif card['idList'] == cf.get_trello_list_id_doing():
-        #    status = 'Doing'
-        #else:
-        #    status = 'Done'
-
-        item = Item(card['id'], card['status'], card['name'], card['dateLastActivity'])
+        item = Item(card['_id'], card['status'], card['name'], card['_date'])
         items_list.append(item)
 
     item_view_model = ViewModel(items_list)
-    #render_template('index.html', view_model=item_view_model)
-
-    #return render_template('index.html', items=items_list)
     return render_template('index.html', view_model=item_view_model)
 
 
@@ -55,28 +31,26 @@ def index():
 #@app.route('/complete_item/<idCard>', methods=['GET', 'PUT'])
 def update_card(idCard):
 
-    url = f"https://api.trello.com/1/cards/{idCard}"
-    headers = {"Accept": "application/json"}
-    list_id = cf.get_trello_list_id_done()
-    query = cf.get_trello_query()
-    query['idList'] = list_id
-    response = requests.request( "PUT", url, headers=headers, params=query )
+    #trello_col = mgdb.get_trello_collection()
+    mgdb.get_trello_collection().find_one_and_update(
+        {"_id" : idCard},
+        {"$set":
+            {"status": "Done",
+            "_date": datetime.now().strftime('%Y-%m-%d')}
+        },upsert=True
+    )
+
     return redirect(url_for('trello_bp.index'))
 
 
 @trello_bp.route('/add', methods=['POST'])
 #@app.route('/add', methods=['POST'])
 def add_card():
-    url = "https://api.trello.com/1/cards"
-    
-    list_id = cf.get_trello_list_id()
-    query = cf.get_trello_query()
-    
-    query['idList'] = list_id
     if request.form['title']:
-        query['name'] = request.form['title']
+        title = request.form['title']
 
-    response = requests.request("POST", url, params=query )
+    card = { "_id": str(uuid.uuid4()), "status": "To Do", "title": title, "_date": datetime.now().strftime('%Y-%m-%d') }
+    mgdb.get_trello_collection().insert_one(card)
     return redirect(url_for('trello_bp.index'))
 
 
@@ -90,39 +64,24 @@ def add_card_to_done():
 
 #delete card/item
 def remove_card(id):
-    url = f"https://api.trello.com/1/cards/{id}"
-    response = requests.request("DELETE", url )
-    print(response.text)
+    result = mgdb.get_trello_collection().find_one_and_delete({"_id": id})
+    print (result.value())
 
 
 #Fetch Cards on a list
 def get_cards(id):
-    url = f"https://api.trello.com/1/lists/{id}/cards"
-    
-    query = cf.get_trello_query()    
-    response = requests.request("GET", url, params=query)
-    print(response.text)
+    result = mgdb.get_trello_collection().find({"_id": id})
+    print (result.value())
 
 
 # create lists
-def add_list_to_board(name):
-    url = "https://api.trello.com/1/lists"
-    query = cf.get_trello_query()
-    
-    #query['name'] = 'MyCorndelDevOpsToDoBoard'
-    query['name'] = name
-    query['idBoard'] = '5abbe4b7ddc1b351ef961414'
-
-    response = requests.request( "POST", url, params=query )
-    print(response.text)
+def add_list_to_board():
+    trello_list = mgdb.get_trello_collection()
+    print(trello_list)
 
 
 #Create New Board
-def create_to_do_board(board_name = 'MyCorndelDevOpsToDoBoard'):
-
-    url = "https://api.trello.com/1/boards/"
-    query = cf.get_trello_query()
-    query['name'] = board_name
-    
-    response = requests.request(  "POST", url, params=query )
-    print(response.text)
+#def create_to_do_board(board_name = 'MyCorndelDevOpsToDoBoard'):
+def create_to_do_board():
+    trello_board = mgdb.get_trello_db()
+    print(trello_board)

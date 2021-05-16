@@ -1,0 +1,8 @@
+#.env*
+.vscode/
+.git
+.gitignore
+.venv
+.vagrant
+geckodriver.exe
+geckodriver.log

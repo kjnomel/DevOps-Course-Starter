@@ -17,15 +17,16 @@ RUN mkdir -p /devops-course-starter/src/app
 RUN touch /devops-course-starter/src/app/__init__.py
 
 RUN pip install -U pip
-RUN poetry install --no-dev
+RUN poetry install
 
-COPY app.py config.py flask_config.py model.py trello_app.py .env.template /devops-course-starter/src/app/
+COPY app.py config.py flask_config.py model.py trello_app.py /devops-course-starter/src/app/
 
 # Expose instruction
 EXPOSE 5000
 
 
 FROM  base as production
+ENV PORT 5000
 # Dockerfile Entrypoint
 #CMD [exec gunicorn --bind 0.0.0.0:5000 --forwarded-allow-ips='*' app:app]
 #CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--chdir", "src/app", "app:app"]
@@ -40,17 +41,22 @@ ENTRYPOINT FLASK_APP=/devops-course-starter/src/app/app.py flask run --host=0.0.
 # testing stage
 FROM base as test
 
+RUN apt-get update -qqy && apt-get install -qqy wget gnupg unzip
 # Install Chrome
-RUN curl -sSL https://dl.google.com/linux/direct/google-chromestable_current_amd64.deb -o chrome.deb &&\
-  apt-get install ./chrome.deb -y &&\
-  rm ./chrome.deb
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+  && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
+  && apt-get update -qqy \
+  && apt-get -qqy install google-chrome-stable \
+  && rm /etc/apt/sources.list.d/google-chrome.list \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+# Install Chrome WebDriver
+RUN CHROME_MAJOR_VERSION=$(google-chrome --version | sed -E "s/.* ([0-9]+)(\.[0-9]+){3}.*/\1/") \
+  && CHROME_DRIVER_VERSION=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_MAJOR_VERSION}") \
+  && echo "Using chromedriver version: "$CHROME_DRIVER_VERSION \
+  && wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
+  && unzip /tmp/chromedriver_linux64.zip -d /usr/bin \
+  && rm /tmp/chromedriver_linux64.zip \
+  && chmod 755 /usr/bin/chromedriver
 
-# Install Chromium WebDriver
-RUN LATEST=`curl -sSL https://chromedriver.storage.googleapis.com/LATEST_RELEASE` &&\
-  echo "Installing chromium webdriver version ${LATEST}" &&\
-  curl -sSL https://chromedriver.storage.googleapis.com/${LATEST}/chromedriver_linux64.zip -o chromedriver_linux64.zip &&\
-  apt-get install unzip -y &&\
-  unzip ./chromedriver_linux64.zip
-
-COPY test_integration_trello.py test_ViewModel.py .env.test ./tests_e2e /devops-course-starter/src/app/
+COPY test_integration_trello.py test_ViewModel.py ./tests_e2e /devops-course-starter/src/app/
 ENTRYPOINT ["poetry", "run", "pytest"]

@@ -43,3 +43,26 @@ after_success:
       docker push $USERNAME/todo-app:$TRAVIS_COMMIT
     fi
   
+before_deploy:
+  - echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+  - docker push $USERNAME/todo-app:latest
+
+#  - export TRAVIS_TAG="1.$TRAVIS_BUILD_NUMBER"
+#  - echo "$TRAVIS_TAG" "$TRAVIS_COMMIT"
+#  - git config --local user.name "$USER_NAME"
+#  - git config --local user.email "$USER_EMAIL"
+#  - git tag "$TRAVIS_TAG" "$TRAVIS_COMMIT"
+  
+deploy:
+  - provider: heroku
+    api_key: $HEROKU_API_KEY
+    script:
+      - curl https://cli-assets.heroku.com/install.sh | sh
+      #- echo "$HEROKU_PASSWORD" | docker login -u "$HEROKU_EMAIL" --password-stdin registry.heroku.com
+      #- docker pull kjnomel/to-do-app
+      - docker tag $USERNAME/todo-app:latest registry.heroku.com/kjnomel-todo-app/web
+      - docker push registry.heroku.com/kjnomel-todo-app/web
+      - heroku container:release to-do-app --app kjnomel-todo-app
+    on:
+      branch: master
+

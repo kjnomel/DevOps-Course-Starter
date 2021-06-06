@@ -111,6 +111,19 @@ dmypy.json
 
 ### Virtual environment ###
 env/
+.venv/
+
+### vscode settings ###
+.vscode/
+app_output.html
+not_an_init_.py
 
 ### Configuration files ###
 .env
+
+#  Selenium Driver and logs
+geckodriver.exe
+geckodriver.log
+
+# Vagrant
+.vagrant/

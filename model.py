@@ -1,4 +1,6 @@
 from datetime import datetime
+from flask_login import UserMixin
+
 
 class Item:
 
@@ -70,5 +72,13 @@ class ViewModel:
         #return datetime.strptime(s, '%Y-%m-%dT%H:%M:%SZ')
         return datetime.strptime(_str, '%Y-%m-%d').date()
 
-    def repr(self):
-        pass
+
+class User(UserMixin):
+    def __init__(self, id, name, email, expires_in):
+        self.id = id
+        self.name = name
+        self.email = email
+        self.expires_in = expires_in
+
+    def __repr__(self):
+        return "%s/%s/%s/%s" % (self.id, self.name, self.email, self.expires_in)

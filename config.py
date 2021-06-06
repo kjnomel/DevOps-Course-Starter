@@ -33,5 +33,21 @@ def get_trello_query():
     'token': get_trello_token()
     }
     return query
+
+def get_github_client_id():
+    return os.getenv('GITHUB_CLIENT_ID')
     
-    
+def get_github_client_secret():
+    return os.getenv('GITHUB_CLIENT_SECRET')
+
+def get_github_call_back_url():
+    return os.getenv('CALL_BACK_URL')
+
+def get_github_token_url():
+    return os.getenv('GITHUB_TOKEN_URL')
+
+def get_github_user_endpoint():
+    return os.getenv('GITHUB_USER_ENDPOINT')
+
+def get_github_oauth_url():
+    return os.getenv('GITHUB_OAUTH_URL')

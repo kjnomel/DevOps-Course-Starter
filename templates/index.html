@@ -7,6 +7,8 @@
   <p class="lead">Just another to-do app.</p>
 </div>
 
+{% if is_writer %}
+
 <div>
   <form action="/add" method="POST">
     <p>
@@ -28,6 +30,7 @@
     </p>
   </form>
 </div>
+{% endif %}
 
 <div class="row">
   <div id="list_of_to_dos" class="col-md-12">
@@ -36,7 +39,9 @@
       <!-- List the todo items here -->
       {% for item in view_model.todoItems %}
       <li>{{ item.id}} - {{item.status}} - {{item.title}} -
+        {% if is_writer %}
         <a href="{{ url_for('trello_bp.update_card', idCard=item.id)}}">Mark item complete</a>
+        {% endif %}
       </li>
       {% endfor %}
     </ul>

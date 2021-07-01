@@ -15,7 +15,6 @@ API_KEY=358x5xx7xxx96x686983250x1x8xx8x7
 TOKEN=xxx61x75051xx88x69x6xxx781x54xx885x16x8394xxx5xxx223x48xxxx19507
 
 # Board and List ID 
-These two IDs are for the sake of simplicity been hardcoded
 BOARD_ID=5f5a4b008a129438843fcf0f
 LIST_ID=5f5a4b008a129438843fcf10
 
@@ -34,9 +33,9 @@ Now visit [`http://localhost:5000/`](http://localhost:5000/) in your web browser
 
 # Tests
 ensure pytest is installed
->>> pip install pytest pytest-flask
+>>> poetry install
 to runn all tests, navigate to the project folder and, from the command line, run the below
->>> pytest
+>>> poetry run pytest
 
 # VM
 The option exists to run the application in VM.  Indeed a Vagranfile has been added to the project to cater such need.

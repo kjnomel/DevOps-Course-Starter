@@ -1,0 +1,62 @@
+sudo: required
+
+language: python
+python:
+  - 3.8
+
+services:
+  - docker
+
+install:
+  #- docker build --target development --tag $USERNAME/todo-app:$TRAVIS_COMMIT .
+  #- docker build --target production --tag $USERNAME/todo-app:latest .
+  - docker build --target test --tag $USERNAME/todo-app:$TRAVIS_COMMIT .
+  #- docker images
+  
+  #- docker run --env-file ./.env.template -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name app todo-app:$TRAVIS_COMMIT
+  #- docker run --env-file ./.env.template -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name app todo-app:latest
+  - docker run --env-file ./.env.test -p 5000:80 --mount type=bind,source=/devops-course-starter/src/app/,target=/devops-course-starter/src/app/ --name int-test-app todo-app:$TRAVIS_COMMIT
+
+before_script:
+  - poetry install
+
+script:
+#- docker ps | grep -q app
+  - docker ps | grep -q int-test-app
+  - poetry run pytest
+  - poetry run pytest test_integration_trello.py
+  - poetry run pytest ./test_e2e
+
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]
+    then 
+      echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+      docker push $USERNAME/todo-app:latest
+      curl https://cli-assets.heroku.com/install.sh | sh
+      echo "$HEROKU_PASSWORD" | docker login -u "$HEROKU_EMAIL" --password-stdin registry.heroku.com
+      docker pull kjnomel/to-do-app
+      docker tag kjnomel/to_do_app registry.heroku.com/kjnomel-todo-app/web
+      docker push registry.heroku.com/kjnomel-todo-app/web
+      heroku container:release to-do-app --app kjnomel-todo-app
+    else
+      echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+      docker push $USERNAME/todo-app:$TRAVIS_COMMIT
+    fi
+  
+before_deploy:
+  - echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+  - docker push $USERNAME/todo-app:latest
+  
+deploy:
+  - provider: heroku
+    api_key: $HEROKU_API_KEY
+    script:
+      - curl https://cli-assets.heroku.com/install.sh | sh
+      #- echo "$HEROKU_PASSWORD" | docker login -u "$HEROKU_EMAIL" --password-stdin registry.heroku.com
+      #- docker pull kjnomel/to-do-app
+      - docker tag $USERNAME/todo-app:latest registry.heroku.com/kjnomel-todo-app/web
+      - docker push registry.heroku.com/kjnomel-todo-app/web
+      - heroku container:release to-do-app --app kjnomel-todo-app
+    on:
+      branch: master
+
